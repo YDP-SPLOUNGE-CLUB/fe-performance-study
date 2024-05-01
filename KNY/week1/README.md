@@ -79,6 +79,68 @@ http://cdn.image.com?src=[img src]&width=240&height=240
 
 메인 스레드의 해당 구간을 확인해보면, `removeSpecialCharacter`이라는 작업이 8.48ms로 Article 컴포넌트의 렌더링 시간이 길어진 이유를 확인해볼 수 있다. 아래에서 이를 개선해보자.
 
+```jsx
+/*
+ * 파라미터로 넘어온 문자열에서 일부 특수문자를 제거하는 함수
+ * (Markdown으로 된 문자열의 특수문자를 제거하기 위함)
+ * */
+function removeSpecialCharacter(str) {
+  const removeCharacters = [
+    "#",
+    "_",
+    "*",
+    "~",
+    "&",
+    ";",
+    "!",
+    "[",
+    "]",
+    "`",
+    ">",
+    "\n",
+    "=",
+    "-",
+  ];
+  let _str = str;
+  let i = 0,
+    j = 0;
+
+  for (i = 0; i < removeCharacters.length; i++) {
+    // 비효율_1
+    j = 0;
+    while (j < _str.length) {
+      if (_str[j] === removeCharacters[i]) {
+        _str = _str.substring(0, j).concat(_str.substring(j + 1)); // 비효율_2
+        continue;
+      }
+      j++;
+    }
+  }
+
+  return _str;
+}
+```
+
+removeCharacters라는 이름으로 제거할 특수 문자를 정의해 두고, 각 특수 문자마다 반복문을 돌려 본문에 일치하는 내용을 탐색한다. 이를 위해 반복문을 중첩해서 사용하고 있고, 문자열을 제거하는 데도 substring과 concat 함수를 이용하고 있다.
+
+**개선**
+
+substring과 concat 함수 => 자바스크립트에는 일치하는 문자를 찾아 제거해주는 replace라는 함수가 이미 존재함. 변경하자
+
+API에서 블로그 글 데이터를 굳이 다 가져올 필요가 있을까? => 블로그 목록을 보여줄 때에는 대략 200자 정도이다. 고로 200자만 잘라서 특수 문자를 제거해보자.
+
+<br/>
+
+```jsx
+function removeSpecialCharacter(str) {
+  let _str = str.substring(0, 300);
+  _str = str.replace(/[#_*~&;![\]`>\n=\->]/g, "");
+  return _str;
+}
+```
+
+=> 최적화 전에는 1.4초 걸리던 작업이, 최적화 후에는 36밀리초로 줄어들었다.
+
 <br/>
 <br/>
 
